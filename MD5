@@ -1,7 +1,7 @@
-16d140c70518ac2c431e3c62bfc8db40 *DESCRIPTION
+0427d54682afdd4154e247b296e0a867 *DESCRIPTION
 4b6bb267b288d6b575eb02962de8242c *LICENSE
 05505775e550380d00b5c9582d7ed9b5 *NAMESPACE
-5ed878362c09684341e3eb2cc6bf42bf *NEWS.md
+aaa1285dead328b69c5c913dd86c3e94 *NEWS.md
 e45bbf6aff4f2b9f5809c3c1b5323637 *R/cast.R
 689785e1a9196538f238556918a64342 *R/combine.R
 07d99208691614193b755cb4c83fcc78 *R/compat.R
@@ -9,12 +9,14 @@ e45bbf6aff4f2b9f5809c3c1b5323637 *R/cast.R
 283f6c60f400fcfb677325fbf541e49b *R/constructors.R
 61728f270c64b5890670cbe788cac5b4 *R/coords.R
 df7615c746abc4d4d44e145af0bf6cab *R/extendr-wrappers.R
-a9af13adf4fb654f0259af8e911127c8 *R/format.R
+7cf1fdf631544917a88019d81dfd5ca2 *R/format.R
 78c47ce9bb928822c469e4ea2f71a79e *R/segmentize.R
 34adeb29819ef37483120e3db7c87e98 *R/simplify.R
 3509a895ef9fa80c856f4578a32703fa *R/utils.R
 f17f711c91935517dd94849e4c084e41 *R/zzz.R
 cef80e0412c03dde226d0686b7ae89a1 *README.md
+fadcb5b4a00adb02701cafe6bdef013b *configure
+6b52cd53d19ffdd7b0e9dece5d9c518b *configure.win
 9d838e528d3964de84d9c9298f170da1 *inst/benchmarks/booleanops.R
 811e4d39a61263fbaf78cf6dead27ece *man/area.Rd
 cbadb9e15e0a5d11fb372112f9b1e65f *man/as_rsgeo.Rd
@@ -58,9 +60,9 @@ b684865c9282682d7b04d4fca64255bf *man/locate_point_on_line.Rd
 a9328129550eb377425d9d7a73aaf9db *man/plot.rsgeo.Rd
 66b38c943088a8d4274736f4c5663cc5 *man/simplify.Rd
 f3bf41f6256e433e9c7529d41ec0fdc9 *man/topology.Rd
-bbf40d63cda91e02826f6845ebd6766c *src/Makevars
+84722f86b907bb585c17aaa47a829bb3 *src/Makevars
 27957123fba16c05c53a66e68b0f3482 *src/Makevars.ucrt
-4e8d0d0e97e039d2c4f372f59182c7bc *src/Makevars.win
+dc68fe9c8a187e854b20514c8967b0d0 *src/Makevars.win
 badf8ac8c38e18bac8b0a226f6309533 *src/entrypoint.c
 a1e874451ab5740a69116dd166a9a7de *src/rsgeo-win.def
 2d2bfdfdafa92bb6c96bc6eab693c73a *src/rust/Cargo.lock
