@@ -2,18 +2,20 @@
 mod area;
 mod boundary;
 mod casting;
+mod coord_utils;
+mod densify;
+mod distance;
 mod length;
 mod query;
+mod segmentize;
 mod similarity;
 mod simplification;
-mod distance;
 // mod io;
 mod construction;
+mod coords;
 mod spatial_index;
 mod topology;
 mod union;
-mod coords;
-
 
 use extendr_api::prelude::*;
 pub use sfconversions::{fromsf::sfc_to_rsgeo, vctrs::*, Geom};
@@ -27,11 +29,11 @@ use geo::{Centroid, HaversineDestination};
 use geo_types::Point;
 
 /// Extract Centroids
-/// 
-/// Given a vector of geometries, extract their centroids. 
-/// 
+///
+/// Given a vector of geometries, extract their centroids.
+///
 /// @param x an object of class `rsgeo`
-/// 
+///
 /// @export
 /// @examples
 /// lns <- geom_linestring(1:100, runif(100, -10, 10), rep.int(1:5, 20))
@@ -46,7 +48,7 @@ fn centroids(x: List) -> Robj {
             if x.is_null() {
                 x
             } else {
-                let geo = <&Geom>::from_robj(&x).unwrap().geom.centroid();
+                let geo = <&Geom>::try_from(&x).unwrap().geom.centroid();
 
                 match geo {
                     Some(cnt) => Geom::from(cnt).into_robj(),
@@ -66,14 +68,15 @@ fn from_sfc(x: List) -> Robj {
 
 #[extendr]
 fn to_sfc(x: List) -> List {
-    let res = x.into_iter()
+    let res = x
+        .into_iter()
         .map(|(_, xi)| {
             if xi.is_null() {
                 NULL.into_robj()
             } else {
                 sfconversions::tosf::to_sfg(Geom::from(xi))
             }
-    })
+        })
         .collect::<Vec<Robj>>();
 
     List::from_values(res)
@@ -81,30 +84,30 @@ fn to_sfc(x: List) -> List {
 
 #[extendr]
 /// Identify a destination point
-/// 
+///
 /// Given a vector of point geometries, bearings, and distances,
 /// identify a destination location.
-/// 
+///
 /// @param x an object of class `rs_POINT`
 /// @param bearing a numeric vector specifying the degree of the direction where 0 is north
 /// @param distance a numeric vector specifying the distance to travel in the direction specified by `bearing` in meters
-/// @returns an object of class `rs_POINT` 
+/// @returns an object of class `rs_POINT`
 /// @examples
 /// # create 10 points at the origin
 /// pnts <- geom_point(rep(0, 10), rep(0, 10))
-/// 
+///
 /// # set seed for reproducibiliy
 /// set.seed(1)
-/// 
+///
 /// # generate random bearings
 /// bearings <- runif(10, 0, 360)
-/// 
+///
 /// # generate random distances
 /// distances <- runif(10, 10000, 100000)
-/// 
+///
 /// # find the destinations
 /// dests <- haversine_destination(pnts, bearings, distances)
-/// 
+///
 /// # plot points
 /// if (rlang::is_installed(c("sf", "wk"))) {
 ///   plot(pnts, pch = 3)
@@ -112,7 +115,6 @@ fn to_sfc(x: List) -> List {
 /// }
 /// @export
 fn haversine_destination(x: List, bearing: Doubles, distance: Doubles) -> Robj {
-
     if !x.inherits("rs_POINT") {
         panic!("`x` must be of class `rs_POINT`")
     }
@@ -158,24 +160,23 @@ fn haversine_destination(x: List, bearing: Doubles, distance: Doubles) -> Robj {
     }
 
     as_rsgeo_vctr(List::from_values(res), "point")
-
 }
 
 use geo::HaversineIntermediate;
 
 #[extendr]
-/// Identifies a point between two points 
-/// 
+/// Identifies a point between two points
+///
 /// Identifies the location between two points on a great circle
-/// along a specified fraction of the distance. 
-/// 
+/// along a specified fraction of the distance.
+///
 /// @param x an `rs_POINT` vector
 /// @param y an `rs_POINT` vector
-/// 
-/// @param distance a numeric vector of either length 1 or the same length as x and y 
-/// 
+///
+/// @param distance a numeric vector of either length 1 or the same length as x and y
+///
 /// @returns an object of class `rs_POINT`
-/// 
+///
 /// @examples
 /// x <- geom_point(1:10, rep(5, 10))
 /// y <- geom_point(1:10, rep(0, 10))
@@ -189,7 +190,6 @@ use geo::HaversineIntermediate;
 /// }
 /// @export
 fn haversine_intermediate(x: List, y: List, distance: Doubles) -> Robj {
-
     if !x.inherits("rs_POINT") || !y.inherits("rs_POINT") {
         panic!("`x` and `y` must be of class `rs_POINT`")
     }
@@ -245,6 +245,8 @@ fn haversine_intermediate(x: List, y: List, distance: Doubles) -> Robj {
     List::from_values(res)
         .set_attrib("class", geom_class("point"))
         .unwrap()
+        .clone()
+        .into()
 }
 
 // /// Chaikin Smoothing
@@ -284,16 +286,19 @@ extendr_module! {
     fn haversine_destination;
     fn haversine_intermediate;
     use area;
+    use boundary;
+    use coords;
+    use coord_utils;
+    use construction;
+    use densify;
+    use distance;
     use length;
     use query;
-    use boundary;
+    use segmentize;
     use simplification;
     use similarity;
     use topology;
-    use construction;
     use union;
     use utils;
     use casting;
-    use coords;
-    use distance;
 }

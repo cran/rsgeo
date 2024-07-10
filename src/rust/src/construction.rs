@@ -1,7 +1,10 @@
 use extendr_api::prelude::*;
 use geo_types::{coord, point, Coord, LineString, MultiPoint, Point, Polygon};
-use sfconversions::{vctrs::geom_class, Geom};
-use std::collections::HashMap;
+use sfconversions::{
+    vctrs::{as_rsgeo_vctr, geom_class},
+    Geom, IntoGeom,
+};
+use std::collections::BTreeMap;
 
 pub trait IsReal {
     fn is_real(&self) -> bool;
@@ -15,7 +18,6 @@ impl IsReal for Rfloat {
 
 #[extendr]
 fn geom_point_(x: Doubles, y: Doubles) -> Robj {
-
     let n_x = x.len();
     let n_y = y.len();
 
@@ -35,12 +37,14 @@ fn geom_point_(x: Doubles, y: Doubles) -> Robj {
         }
     }
 
-    res.set_attrib("class", geom_class("point")).unwrap()
+    res.set_attrib("class", geom_class("point"))
+        .unwrap()
+        .clone()
+        .into_robj()
 }
 
 #[extendr]
 fn geom_multipoint_(x: Doubles, y: Doubles, id: Integers) -> Robj {
-
     let n_id = id.len();
     let n_x = x.len();
     let n_y = y.len();
@@ -53,11 +57,11 @@ fn geom_multipoint_(x: Doubles, y: Doubles, id: Integers) -> Robj {
 
     let id = match n_id == 1 {
         true => Integers::from_values(vec![1; n_x]),
-        false => id
+        false => id,
     };
 
     // create empty hash map to store unique vectors of points
-    let mut map_mpnts: HashMap<i32, Vec<Point>> = HashMap::new();
+    let mut map_mpnts: BTreeMap<i32, Vec<Point>> = BTreeMap::new();
 
     // iterate through everything and create points
     for ((xi, yi), idx) in x.iter().zip(y.iter()).zip(id.iter()) {
@@ -79,11 +83,12 @@ fn geom_multipoint_(x: Doubles, y: Doubles, id: Integers) -> Robj {
     List::from_values(res_vec)
         .set_class(geom_class("multipoint"))
         .unwrap()
+        .clone()
+        .into_robj()
 }
 
 #[extendr]
 fn geom_linestring_(x: Doubles, y: Doubles, id: Integers) -> Robj {
-
     let n_id = id.len();
     let n_x = x.len();
     let n_y = y.len();
@@ -93,14 +98,14 @@ fn geom_linestring_(x: Doubles, y: Doubles, id: Integers) -> Robj {
     } else if (n_id != n_x) && (n_id != 1) {
         panic!("`id` must be the same length as `x` or length 1")
     }
-    
+
     let id = match n_id == 1 {
         true => Integers::from_values(vec![1; n_x]),
-        false => id
+        false => id,
     };
 
     // create empty hash map to store unique vectors of points
-    let mut map_mpnts: HashMap<i32, Vec<Coord>> = HashMap::new();
+    let mut map_mpnts: BTreeMap<i32, Vec<Coord>> = BTreeMap::new();
 
     // iterate through everything and create points
     for ((xi, yi), idx) in x.iter().zip(y.iter()).zip(id.iter()) {
@@ -122,37 +127,37 @@ fn geom_linestring_(x: Doubles, y: Doubles, id: Integers) -> Robj {
     List::from_values(res_vec)
         .set_class(geom_class("linestring"))
         .unwrap()
+        .clone()
+        .into_robj()
 }
 
 #[extendr]
 fn geom_polygon_(x: Doubles, y: Doubles, id: Integers, ring: Integers) -> Robj {
-
     let n_id = id.len();
     let n_ring = ring.len();
     let n_x = x.len();
     let n_y = y.len();
 
-
-   if n_x != n_y {
+    if n_x != n_y {
         panic!("`x` and `y` must be the same length")
     } else if (n_id != n_x) && (n_id != 1) {
         panic!("`id` must be the same length as `x` or length 1")
     } else if (n_ring != n_x) && (n_ring != 1) {
         panic!("`ring` must be the same length as `x` or length 1")
     }
-    
+
     let id = match n_id == 1 {
         true => Integers::from_values(vec![1; n_x]),
-        false => id
+        false => id,
     };
 
     let ring: Integers = match n_ring == 1 {
         true => Integers::from_values(vec![1; n_x]),
-        false => ring
+        false => ring,
     };
 
     // create empty hash map to store unique vectors of points for each ring
-    let mut map_rings: HashMap<i32, HashMap<i32, Vec<Coord>>> = HashMap::new();
+    let mut map_rings: BTreeMap<i32, BTreeMap<i32, Vec<Coord>>> = BTreeMap::new();
 
     // iterate through everything and create points
     for (((xi, yi), idx), ring_idx) in x.iter().zip(y.iter()).zip(id.iter()).zip(ring.iter()) {
@@ -162,7 +167,7 @@ fn geom_polygon_(x: Doubles, y: Doubles, id: Integers, ring: Integers) -> Robj {
 
             map_rings
                 .entry(ring_idx.inner())
-                .or_insert(HashMap::new())
+                .or_insert(BTreeMap::new())
                 .entry(idx.inner())
                 .or_insert(Vec::new())
                 .push(pnt);
@@ -197,6 +202,35 @@ fn geom_polygon_(x: Doubles, y: Doubles, id: Integers, ring: Integers) -> Robj {
     List::from_values(res_vec)
         .set_class(geom_class("polygon"))
         .unwrap()
+        .clone()
+        .into_robj()
+}
+
+#[extendr]
+/// @export
+/// @rdname construction
+fn geom_line(x: List, y: List) -> Robj {
+    if !x.inherits("rs_POINT") || !y.inherits("rs_POINT") {
+        panic!("`x` and `y` must be of class `rs_POINT`")
+    }
+
+    let res_vec = x
+        .into_iter()
+        .zip(y.into_iter())
+        .map(|((_, xi), (_, yi))| {
+            if xi.is_null() || yi.is_null() {
+                NULL.into_robj()
+            } else {
+                let p1 = Point::from(Geom::from(xi));
+                let p2 = Point::from(Geom::from(yi));
+                LineString::new(vec![p1.0, p2.0]).into_geom().into_robj()
+            }
+        })
+        .collect::<Vec<Robj>>();
+
+    let res = List::from_values(res_vec);
+
+    as_rsgeo_vctr(res, "linestring")
 }
 
 extendr_module! {
@@ -205,4 +239,5 @@ extendr_module! {
     fn geom_multipoint_;
     fn geom_linestring_;
     fn geom_polygon_;
+    fn geom_line;
 }
